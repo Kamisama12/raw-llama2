@@ -363,9 +363,9 @@ ss=SPTokenizer('./tokenizer.model')
 a=tokenizer.encode("你好",add_special_tokens=True)
 import logging
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logging.basicConfig(level=logging.INFO)
-logger=logging.getLogger('11')
-logger.info('1')
+logging.basicConfig(level=logging.WARNING)
+logger=logging.getLogger('testLOGGER')
+logger.warning('1')
 # print(a)
 # print(tokenizer.tokenizer.pad_id)
 # print(tokenizer.decode([54591]))
@@ -380,3 +380,4 @@ b=1
 assert b==0,'111111111'
 a=[1,2,3,4]
 print(a.index(4))
+torch.randn

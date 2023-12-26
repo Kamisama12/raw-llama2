@@ -61,7 +61,7 @@ class SFTDataset(Dataset):
         return torch.from_numpy(X),torch.from_numpy(Y),torch.from_numpy(loss_mask)
 #
 if __name__=="__main__":
-    df=pd.read_csv('./data/sft_data.csv')
+    df=pd.read_csv('./data/medicalqa_sft.csv')
     tokenizer=XchatTokenizer(vocab_file='./tokenizer.model')
     train_ds = SFTDataset(df,tokenizer,max_length=256)
     train_loader = torch.utils.data.DataLoader(

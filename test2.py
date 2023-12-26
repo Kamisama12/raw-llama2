@@ -12,3 +12,12 @@
 #         f.write(f'Piece:{id}:{token}|{score}\n')
 
 
+import json
+filepath=r'/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/pretrain/train_encyclopedia.json'
+# with open(filepath,'r',encoding='utf-8') as f:
+#     for _ in range(10):
+#         row=f.readline()
+#         print(row)
+a=[1,2]
+b=[3,4]
+print(a.extend(b))

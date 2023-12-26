@@ -32,7 +32,40 @@ def process_wiki_clean(filepath:str = None):
     arr = np.array(doc_ids,dtype=np.uint16)
     with open('./data/wiki.bin','wb') as f:
         f.write(arr.tobytes())
-
+def process_medical_book(filepath:str=None):
+    global total_token
+    doc_ids=[]
+    assert os.path.isfile(filepath),f"check filepath {filepath}"
+    with open(filepath,'r',encoding='utf-8') as f:
+        for line in f:
+            text=json.loads(line.strip())['text']
+            total_token+=len(text)
+            text_id=XChattokenizer.encode(text,add_special_tokens=False)
+            text_id.append(XChattokenizer.special_tokens['<eos>'])#添加结束标志符
+            if len(text_id)>5:
+                doc_ids.extend(text_id)#原地操作
+    arr=np.array(doc_ids,dtype=np.uint16)
+    with open('./data/medical_book.bin','wb') as f:
+        f.write(arr.tobytes())
+    print(total_token)
+    logger.info('book done')
+def process_medical_encycloped(filepath:str=None):
+    global total_token
+    doc_ids=[]
+    assert os.path.isfile(filepath),f"check filepath {filepath}"
+    with open(filepath,'r',encoding='utf-8') as f:
+        for line in f:
+            text=json.loads(line.strip())['text']
+            total_token+=len(text)
+            text_id=XChattokenizer.encode(text,add_special_tokens=False)
+            text_id.append(XChattokenizer.special_tokens['<eos>'])#添加结束标志符
+            if len(text_id)>5:
+                doc_ids.extend(text_id)#原地操作
+    arr=np.array(doc_ids,dtype=np.uint16)
+    with open('./data/medical_encycloped.bin','wb') as f:
+        f.write(arr.tobytes())
+    print(total_token)
+    logger.info('encycloped done')
 def process_baidu(filepath:str = None):
     '''
     baidu这个数据集太大没办法一次全部加载
@@ -191,40 +224,40 @@ def sft_to_pretrain():
 处理sft用的数据集的函数
 '''
 def process_sft(filepath:str = None):
-    with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/sft/alpaca_gpt4_data_zh.json','r',encoding='utf-8') as f:
-        data=json.load(f)
-    #
+    # with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/sft/alpaca_gpt4_data_zh.json','r',encoding='utf-8') as f:
+    #     data=json.load(f)
+    # #
     q_lst=[]
     a_lst=[]
-    for per in data:
-        q=per['instruction']
-        i=per['input']
-        a=per['output']
-        q=q+i
-        if len(q)<10 or len(a)<5:
-            continue
-        if len(q)>256 or len(a)>256:
-            continue
-        q_lst.append(q)
-        a_lst.append(a)
+    # for per in data:
+    #     q=per['instruction']
+    #     i=per['input']
+    #     a=per['output']
+    #     q=q+i
+    #     if len(q)<10 or len(a)<5:
+    #         continue
+    #     if len(q)>256 or len(a)>256:
+    #         continue
+    #     q_lst.append(q)
+    #     a_lst.append(a)
 
-    f = open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/sft/Belle_open_source_1M.json','r',encoding='utf-8')
+    # f = open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/sft/Belle_open_source_1M.json','r',encoding='utf-8')
 
-    while True:
-        line = f.readline()
-        if not line:
-            break
-        per=json.loads(line)
-        q=per['instruction']
-        i=per['input']
-        a=per['output']
-        q=q+i
-        if len(q)<10 or len(a)<5:
-            continue
-        if len(q)>256 or len(a)>256:
-            continue
-        q_lst.append(q)
-        a_lst.append(a)
+    # while True:
+    #     line = f.readline()
+    #     if not line:
+    #         break
+    #     per=json.loads(line)
+    #     q=per['instruction']
+    #     i=per['input']
+    #     a=per['output']
+    #     q=q+i
+    #     if len(q)<10 or len(a)<5:
+    #         continue
+    #     if len(q)>256 or len(a)>256:
+    #         continue
+    #     q_lst.append(q)
+    #     a_lst.append(a)
 
     # with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/sft/howard_cognition.json','r',encoding='utf-8') as f:
     #     data=json.load(f)
@@ -242,11 +275,86 @@ def process_sft(filepath:str = None):
     #         continue
     #     q_lst.append(q)
     #     a_lst.append(a)
+    '''下面这段是将医疗数据集做成sft的数据集'''
+    with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/finetune/train_en_1.json','r',encoding='utf-8') as f:
+        for row in f:
+            line=json.loads(row)
+            q=line['input']
+            a=line['output']
+            if len(q)<10 or len(a)<5:
+                continue
+            if len(q)>256 or len(a)>256:
+                continue
+            q_lst.append(q)
+            a_lst.append(a)
+        logger.info('done')
+    with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/finetune/test_en_1.json','r',encoding='utf-8') as f:
+        for row in f:
+            line=json.loads(row)
+            q=line['input']
+            a=line['output']
+            if len(q)<10 or len(a)<5:
+                continue
+            if len(q)>256 or len(a)>256:
+                continue
+            q_lst.append(q)
+            a_lst.append(a)
+        logger.info('done')
+    with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/finetune/valid_en_1.json','r',encoding='utf-8') as f:
+        for row in f:
+            line=json.loads(row)
+            q=line['input']
+            a=line['output']
+            if len(q)<10 or len(a)<5:
+                continue
+            if len(q)>256 or len(a)>256:
+                continue
+            q_lst.append(q)
+            a_lst.append(a)
+        logger.info('done')
+    with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/finetune/train_zh_0.json','r',encoding='utf-8') as f:
+        for row in f:
+            line=json.loads(row)
+            q=line['instruction']+line['input']
+            a=line['output']
+            if len(q)<10 or len(a)<5:
+                continue
+            if len(q)>256 or len(a)>256:
+                continue
+            q_lst.append(q)
+            a_lst.append(a)
+        logger.info('done')
+    with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/finetune/test_zh_0.json','r',encoding='utf-8') as f:
+        for row in f:
+            line=json.loads(row)
+            q=line['instruction']+line['input']
+            a=line['output']
+            if len(q)<10 or len(a)<5:
+                continue
+            if len(q)>256 or len(a)>256:
+                continue
+            q_lst.append(q)
+            a_lst.append(a)
+        logger.info('done')
+    with open('/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/finetune/valid_zh_0.json','r',encoding='utf-8') as f:
+        for row in f:
+            line=json.loads(row)
+            q=line['instruction']+line['input']
+            a=line['output']
+            if len(q)<10 or len(a)<5:
+                continue
+            if len(q)>256 or len(a)>256:
+                continue
+            q_lst.append(q)
+            a_lst.append(a)
+        logger.info('done')
+
+
 
     df=pd.DataFrame(columns=['prompt','answer'])
     df['prompt']=q_lst
     df['answer']=a_lst
-    df.to_csv('./data/sft_selfcongnition_data.csv',index=False)
+    df.to_csv('./data/medicalqa_sft.csv',index=False)
     print(df)
 
 
@@ -256,13 +364,17 @@ if __name__=='__main__':
     XChattokenizer=XchatTokenizer(r'./tokenizer.model')
     wiki_path=r'/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/wikipedia-cn-20230720-filtered.json'
     baidu_path=r'/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/563w_baidubaike.json'
+    encyclopedpath=r'/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/pretrain/train_encyclopedia.json'
+    medical_book_path=r'/home/yuzhaohao/LanguageModel/model_data_files_for_yzh/medical/pretrain/medical_book_zh.json'
     '''
-    下面三句话单独处理数据集的时候取消注释
+    下面几行单独处理数据集的时候取消注释
     '''
     # process_wiki_clean(wiki_path)
     # process_baidu(baidu_path)
     # sft_to_pretrain()
     # print(total_token)
+    # process_medical_encycloped(encyclopedpath)
+    # process_medical_book(medical_book_path)
     '''
     单独处理完数据之后合并成一个大的数据集
     '''
@@ -275,7 +387,9 @@ if __name__=='__main__':
         './data/baidubaike_563w_6.bin',
         './data/wiki.bin',
         './data/medical_qa.bin',
-        './data/alpaca_belle_qa.bin'
+        # './data/alpaca_belle_qa.bin',
+        './data/medical_book.bin',
+        './data/medical_encycloped.bin'
     ]
     data_lst=[]
     for data_path in data_path_list:
@@ -284,7 +398,7 @@ if __name__=='__main__':
             data_lst.append(data)
     arr = np.concatenate(data_lst)
     print(arr.shape)
-    with open('./data/pretrain_data_with_baidu_wiki_medicalqa_alpaca_belle_qa.bin','wb') as f:
+    with open('./data/pretrain_data_with_baidu_wiki_medicalqa_medicalbook_medicalencyclo.bin','wb') as f:
         f.write(arr.tobytes())
 
     '''

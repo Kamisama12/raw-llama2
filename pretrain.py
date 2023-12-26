@@ -34,12 +34,12 @@ num_layer=8
 multiple_of=32
 max_epoch = 2
 warmup_iters=15000
-lr_decay_iters=700000
+lr_decay_iters=800000
 log_interval=100
 decay_lr=True#设置是否使用learning rate decay的策略
-learning_rate = 4e-4
+learning_rate = 2e-3
 weight_decay=1e-1
-min_lr=1e-5
+min_lr=3e-4
 beta1=0.9
 beta2=0.95
 eval_interval = max_epoch//5
@@ -115,7 +115,12 @@ def train_epoch(epoch,
                 iter_per_epoch:int,
                 ):
     start_time=time.time()
-    gradient_accumulation_steps=len(loader)//100
+    '''
+    这个gradient_accumulation_steps参数是当我们需要用多次小批batch训练之后叠加的梯度模拟一个大的batch训练采用到，
+    会设置一个micro step，达到了gradient_accumulation_steps之后才使能梯度同步。我们现在没有做这个操作所以先将
+    gradient_accumulation_steps设置为1
+    '''
+    gradient_accumulation_steps=1
     for step, (X, Y) in enumerate(loader):
         X=X.to(device)
         Y=Y.to(device)
@@ -130,14 +135,14 @@ def train_epoch(epoch,
             # the official way to do this is with model.no_sync() context manager, but
             # I really dislike that this bloats the code and forces us to repeat code
             # looking at the source of that context manager, it just toggles this variable
-            gradient_accumulation_steps-=1
-            if gradient_accumulation_steps==0 or step == iter_per_epoch-1:
-                model.require_backward_grad_sync = True
-                gradient_accumulation_steps=len(loader)//100
-                logger.info("setting  model.require_backward_grad_sync as True,grad will be sync in this step.")
-            else:
-                model.require_backward_grad_sync = False
-
+            # gradient_accumulation_steps-=1
+            # if gradient_accumulation_steps==0 or step == iter_per_epoch-1:
+            #     model.require_backward_grad_sync = True
+            #     gradient_accumulation_steps=len(loader)//100
+            #     logger.info("setting  model.require_backward_grad_sync as True,grad will be sync in this step.")
+            # else:
+            #     model.require_backward_grad_sync = False
+            model.require_backward_grad_sync=0==gradient_accumulation_steps-1
         with ctx:
             logits = model(X, Y)
             if ddp:
@@ -267,7 +272,7 @@ if __name__=='__main__':
     torch.backends.cudnn.allow_tf32 = True  # allow tf32 on cudnn
     model=init_model('scratch')
     save_dir='XChat'
-    dataet_path_list=np.array([r'./data/pretrain_data_with_baidu_wiki_medicalqa_alpaca_belle_qa.bin'],dtype=np.dtype('str'))
+    dataet_path_list=np.array([r'./data/pretrain_data_with_baidu_wiki_medicalqa_medicalbook_medicalencyclo.bin'],dtype=np.dtype('str'))
     mydataset=Xchatdataset(dataet_path_list,max_length=block_size,memmap=True)#读取处理好的数据集
     # train_data,valid_data=random_split(mydataset,[0.7,0.3])
     #放进数据加载器
@@ -337,7 +342,7 @@ if __name__=='__main__':
                 checkpoint_dict['optimizer_state_dict']=optimizer.state_dict()
                 checkpoint_dict['epoch']=epoch+1
                 # torch.save(ddp_model.module.state_dict(),'{}_epoch_{}.bin'.format(save_dir,epoch))
-                torch.save(checkpoint_dict,'{}_epoch_{}_baidu_wiki_medicalqa_alpaca_belle.bin'.format(save_dir,epoch+1))
+                torch.save(checkpoint_dict,'{}_epoch_{}_baidu_wiki_medicalqa2.bin'.format(save_dir,epoch+1))
                 
     except KeyboardInterrupt:
         logger.info('catching exception in rank {},exiting process'.format(dist.get_rank()))

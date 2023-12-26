@@ -49,12 +49,13 @@ tt=SPTokenizer('./tokenizer.model')
 print(xchat_tokenizer.special_tokens['<eos>'])
 print(tt.eos_id)
 
-my_sentence='出现头晕血压低是怎么回事，一个星期头疼。头晕。恶心。四肢无力。我女儿12岁'
+my_sentence='我大便的时候出血，是什么原因？'
 answer=[]
 '''
 这面这段用来测试pretrain之后的模型
 '''
-token=xchat_tokenizer.encode(my_sentence)
+token=xchat_tokenizer.encode(my_sentence,add_special_tokens=False)+[xchat_tokenizer.special_tokens['<bos>']]
+print()
 model.to(device)
 with torch.device(device=device):
     with torch.cuda.amp.autocast():

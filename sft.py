@@ -121,7 +121,7 @@ def train_epoch(epoch,
                 iter_per_epoch:int,
                 ):
     start_time=time.time()
-    gradient_accumulation_steps=len(loader)//100
+    gradient_accumulation_steps=1
     for step, (X, Y,loss_mask) in enumerate(loader):
         X=X.to(device)
         Y=Y.to(device)
@@ -135,14 +135,14 @@ def train_epoch(epoch,
             # the official way to do this is with model.no_sync() context manager, but
             # I really dislike that this bloats the code and forces us to repeat code
             # looking at the source of that context manager, it just toggles this variable
-            gradient_accumulation_steps-=1
-            if gradient_accumulation_steps==0 or step == iter_per_epoch-1:
-                model.require_backward_grad_sync = True
-                gradient_accumulation_steps=len(loader)//100
-                logger.info("setting  model.require_backward_grad_sync as True,grad will be sync in this step.")
-            else:
-                model.require_backward_grad_sync = False
-
+            # gradient_accumulation_steps-=1
+            # if gradient_accumulation_steps==0 or step == iter_per_epoch-1:
+            #     model.require_backward_grad_sync = True
+            #     gradient_accumulation_steps=len(loader)//100
+            #     logger.info("setting  model.require_backward_grad_sync as True,grad will be sync in this step.")
+            # else:
+            #     model.require_backward_grad_sync = False
+            model.require_backward_grad_sync=0==gradient_accumulation_steps-1
         with ctx:
             logits = model(X, Y)
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), Y.view(-1), ignore_index=0,reduce=False)#ignore_index设置要忽略的编码，reduce设置是否需要求平均
@@ -270,10 +270,10 @@ if __name__=='__main__':
     #提高运算速度，TF32可简单理解为FP16的精度，所以精度会变差
     torch.backends.cuda.matmul.allow_tf32 = True  
     torch.backends.cudnn.allow_tf32 = True  # allow tf32 on cudnn
-    model=init_model('resume',out_dir='./XChat_epoch_2_baidu_wiki_medicalqa_alpaca_belle.bin')
+    model=init_model('resume',out_dir='./XChat_epoch_2_baidu_wiki_medicalqa.bin')
     save_dir='XChat'
 
-    df=pd.read_csv('./data/sft_data.csv')#读取sft数据
+    df=pd.read_csv('./data/medicalqa_sft.csv')#读取sft数据
     mydataset=SFTDataset(df,tokenizer,max_length=block_size)
     # train_data,valid_data=random_split(mydataset,[0.7,0.3])
     #放进数据加载器
